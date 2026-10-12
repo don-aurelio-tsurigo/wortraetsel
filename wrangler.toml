@@ -6,9 +6,7 @@ compatibility_date = "2026-09-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "raetsel"
-# Vor dem ersten Deploy: `npx wrangler d1 create raetsel` und die ID hier eintragen.
-# Lokal (wrangler dev) wird die Datenbank simuliert, die ID spielt dort keine Rolle.
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "b3f337a4-51e7-42ab-acbe-6b7c84dea625"
 migrations_dir = "migrations"
 
 # Logos
