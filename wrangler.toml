@@ -1,0 +1,27 @@
+name = "raetsel"
+main = "src/index.tsx"
+compatibility_date = "2026-09-01"
+
+# Rätsel, Texte, Wörter und (ab Phase 2) Spielstände/Statistik
+[[d1_databases]]
+binding = "DB"
+database_name = "raetsel"
+# Vor dem ersten Deploy: `npx wrangler d1 create raetsel` und die ID hier eintragen.
+# Lokal (wrangler dev) wird die Datenbank simuliert, die ID spielt dort keine Rolle.
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+# Logos
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "raetsel-files"
+
+[vars]
+# Cloudflare Access fürs Backend (/admin). Beide leer = kein Schutz (nur lokal!).
+# ACCESS_TEAM_DOMAIN z.B. "tsri.cloudflareaccess.com", ACCESS_AUD = Application Audience (AUD) Tag
+ACCESS_TEAM_DOMAIN = ""
+ACCESS_AUD = ""
+
+# Statische Dateien des Spiels (public/static/*); alles andere geht an den Worker
+[assets]
+directory = "./public"
