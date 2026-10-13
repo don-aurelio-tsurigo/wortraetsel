@@ -1,6 +1,16 @@
 import { Hono } from "hono";
 import type { Context } from "hono";
-import { requireAdmin } from "../lib/auth";
+import {
+  authMode,
+  checkPassword,
+  clientIp,
+  endSession,
+  isLockedOut,
+  LOCKOUT_MINUTES,
+  recordFailedLogin,
+  requireAdmin,
+  startSession,
+} from "../lib/auth";
 import { addDays, formatDateCH, todayZurich } from "../lib/dates";
 import { isPuzzleDay, parseWeekdays, projectDates } from "../lib/schedule";
 import {
@@ -33,6 +43,58 @@ type Ctx = Context<AppEnv>;
 
 export const admin = new Hono<AppEnv>();
 admin.use("*", requireAdmin);
+
+// ─── Login (nur beim Passwort-Login erreichbar) ─────────────────
+
+function safeNext(value: unknown): string {
+  const next = typeof value === "string" ? value : "";
+  return next.startsWith("/admin") && !next.startsWith("//") ? next : "/admin";
+}
+
+admin.get("/login", (c) => {
+  if (authMode(c.env) !== "password") return c.redirect("/admin", 303);
+  const next = safeNext(c.req.query("next"));
+  return c.html(
+    <Layout title="Anmelden">
+      <div style="max-width: 380px; margin: 40px auto 0">
+        <h1>Anmelden</h1>
+        <p class="lead">Backend der Newsletter-Rätsel.</p>
+        <Flash err={c.req.query("err")} />
+        <form class="card" method="post" action="/admin/login">
+          <input type="hidden" name="next" value={next} />
+          <label>Passwort</label>
+          <input type="password" name="password" required autofocus autocomplete="current-password"
+            style="width: 100%; padding: 8px 10px; border: 1px solid #cfcbbf; border-radius: 6px; font: inherit" />
+          <div class="actions"><button type="submit">Anmelden</button></div>
+        </form>
+      </div>
+    </Layout>,
+  );
+});
+
+admin.post("/login", async (c) => {
+  if (authMode(c.env) !== "password") return c.redirect("/admin", 303);
+  const body = await c.req.parseBody();
+  const next = safeNext(body.next);
+  const ip = clientIp(c);
+  const retry = (err: string) =>
+    c.redirect(`/admin/login?next=${encodeURIComponent(next)}&err=${encodeURIComponent(err)}`, 303);
+
+  if (await isLockedOut(c.env.DB, ip)) {
+    return retry(`Zu viele Fehlversuche. Bitte in ${LOCKOUT_MINUTES} Minuten nochmals versuchen.`);
+  }
+  if (!(await checkPassword(c.env, String(body.password ?? "")))) {
+    await recordFailedLogin(c.env.DB, ip);
+    return retry("Falsches Passwort.");
+  }
+  await startSession(c);
+  return c.redirect(next, 303);
+});
+
+admin.post("/logout", (c) => {
+  endSession(c);
+  return c.redirect("/admin/login", 303);
+});
 
 const LOW_QUEUE_WARNING = 10;
 const MAX_LOGO_BYTES = 1024 * 1024;

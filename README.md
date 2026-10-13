@@ -10,7 +10,7 @@ Wordle in `../Wordle`, das unverändert weiterläuft.
 /api/{slug}/state   Spielstand, Zugang, Texte (GET)
 /api/{slug}/guess   Versuch (POST)
 /api/{slug}/grace   «Ich bin schon Member» (POST)
-/admin              Backend (Cloudflare Access)
+/admin              Backend (Passwort-Login)
 ```
 
 ## Spielregeln
@@ -70,8 +70,16 @@ npm run db:migrate:remote
 npm run deploy
 ```
 
-Danach Domain `tsri-raetsel.ch` in Cloudflare hinzufügen, als Custom Domain an den
-Worker hängen und für `/admin*` eine Cloudflare-Access-Applikation anlegen
-(Login auf `@tsri.ch` beschränken). Team-Domain und AUD-Tag in `wrangler.toml`
-unter `ACCESS_TEAM_DOMAIN` / `ACCESS_AUD` eintragen. Ohne diese beiden Werte
-antwortet `/admin` in Produktion mit 503.
+Backend-Passwort setzen (liegt nur als Secret bei Cloudflare, nie im Code):
+
+```bash
+npx wrangler secret put ADMIN_PASSWORD
+```
+
+Mit demselben Befehl wird es geändert; alle Sitzungen werden dabei automatisch
+abgemeldet. Nach 5 Fehlversuchen ist das Login pro IP für 15 Minuten gesperrt.
+Optional lässt sich stattdessen Cloudflare Access nutzen (`ACCESS_TEAM_DOMAIN` und
+`ACCESS_AUD` in `wrangler.toml`), dann gilt das Passwort nicht mehr.
+
+Deployt wird automatisch bei jedem Push auf `main` (Cloudflare Workers Builds).
+Neue Migrationen vorher mit `npm run db:migrate:remote` anwenden.

@@ -4,6 +4,8 @@ export interface Env {
   ACCESS_TEAM_DOMAIN?: string;
   ACCESS_AUD?: string;
   DEV_ADMIN_BYPASS?: string;
+  /** Secret: Passwort fürs Backend (wrangler secret put ADMIN_PASSWORD) */
+  ADMIN_PASSWORD?: string;
 }
 
 export type PuzzleType = "wordle";

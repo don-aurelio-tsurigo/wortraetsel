@@ -84,6 +84,11 @@ export const Layout: FC<{ title: string; adminEmail?: string; children?: Child }
         <div class="inner">
           <a class="brand" href="/admin">🧩 Rätsel-Backend</a>
           {adminEmail ? <span class="user">{adminEmail}</span> : null}
+          {adminEmail === "Admin" ? (
+            <form method="post" action="/admin/logout" style="margin: 0">
+              <button class="small secondary" type="submit">Abmelden</button>
+            </form>
+          ) : null}
         </div>
       </header>
       <main>{children}</main>
